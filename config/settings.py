@@ -5,8 +5,12 @@ Django settings for the Document QA RAG project.
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 
 # Security
@@ -75,12 +79,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
-# SQLite is temporary and will be replaced with PostgreSQL + pgvector.
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "document_qa"),
+        "USER": os.getenv("DB_USER", "document_qa_user"),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
