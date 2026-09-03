@@ -1,0 +1,1 @@
+"""Django admin configuration for the question answering application."""

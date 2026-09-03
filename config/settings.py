@@ -31,6 +31,11 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    # Local applications
+    "apps.documents.apps.DocumentsConfig",
+    "apps.qa.apps.QAConfig",
+
+    # Django applications
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
