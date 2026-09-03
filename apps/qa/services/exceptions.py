@@ -4,3 +4,7 @@ class EmbeddingServiceError(Exception):
 
 class DocumentIndexingError(Exception):
     """Raised when document vector indexing fails."""
+
+
+class RetrievalError(Exception):
+    """Raised when semantic document retrieval fails."""
