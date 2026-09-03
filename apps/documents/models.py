@@ -1,7 +1,9 @@
 from pathlib import Path
 
+from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from pgvector.django import VectorField
 
 
 class Document(models.Model):
@@ -76,10 +78,14 @@ class Document(models.Model):
                 )
 
                 if previous_file_name != current_file_name:
-                    self.original_filename = Path(current_file_name).name
+                    self.original_filename = Path(
+                        current_file_name
+                    ).name
 
             elif not self.original_filename:
-                self.original_filename = Path(current_file_name).name
+                self.original_filename = Path(
+                    current_file_name
+                ).name
 
         super().save(*args, **kwargs)
 
@@ -100,6 +106,12 @@ class DocumentChunk(models.Model):
     )
 
     character_count = models.PositiveIntegerField()
+
+    embedding = VectorField(
+        dimensions=settings.EMBEDDING_DIMENSION,
+        null=True,
+        blank=True,
+    )
 
     created_at = models.DateTimeField(
         auto_now_add=True,

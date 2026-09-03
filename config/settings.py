@@ -144,6 +144,30 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 
+# Embeddings
+
+EMBEDDING_MODEL_NAME = os.getenv(
+    "EMBEDDING_MODEL_NAME",
+    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+)
+
+EMBEDDING_DEVICE = os.getenv(
+    "EMBEDDING_DEVICE",
+    "cpu",
+)
+
+EMBEDDING_BATCH_SIZE = int(
+    os.getenv(
+        "EMBEDDING_BATCH_SIZE",
+        "32",
+    )
+)
+
+# This value is part of the database schema and must match
+# the output dimension of the configured embedding model.
+EMBEDDING_DIMENSION = 384
+
+
 # Default primary key field type
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

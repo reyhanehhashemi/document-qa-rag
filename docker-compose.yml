@@ -35,10 +35,12 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "5432"
+      HF_HOME: /root/.cache/huggingface
     ports:
       - "8000:8000"
     volumes:
       - .:/app
+      - huggingface_cache:/root/.cache/huggingface
     depends_on:
       db:
         condition: service_healthy
@@ -46,3 +48,4 @@ services:
 
 volumes:
   postgres_data:
+  huggingface_cache:
