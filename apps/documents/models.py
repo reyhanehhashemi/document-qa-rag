@@ -8,6 +8,7 @@ class Document(models.Model):
     class Status(models.TextChoices):
         UPLOADED = "uploaded", "Uploaded"
         PROCESSING = "processing", "Processing"
+        PROCESSED = "processed", "Processed"
         INDEXED = "indexed", "Indexed"
         FAILED = "failed", "Failed"
 
