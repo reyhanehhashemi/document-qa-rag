@@ -6,22 +6,31 @@ from django.test import TestCase, override_settings
 from docx import Document as WordDocument
 
 from apps.documents.models import Document
-from apps.documents.services.exceptions import InvalidDocxError
-from apps.documents.services.processing import process_document
+from apps.documents.services.exceptions import (
+    InvalidDocxError,
+)
+from apps.documents.services.processing import (
+    process_document,
+)
 
 
 class DocumentProcessingTests(TestCase):
     def setUp(self):
-        self.temporary_media_directory = tempfile.TemporaryDirectory()
+        self.temporary_media_directory = (
+            tempfile.TemporaryDirectory()
+        )
 
         self.media_override = override_settings(
-            MEDIA_ROOT=self.temporary_media_directory.name,
+            MEDIA_ROOT=(
+                self.temporary_media_directory.name
+            ),
         )
 
         self.media_override.enable()
 
     def tearDown(self):
         self.media_override.disable()
+
         self.temporary_media_directory.cleanup()
 
     def create_docx_bytes(self):
@@ -34,14 +43,19 @@ class DocumentProcessingTests(TestCase):
         )
 
         word_document.add_paragraph(
-            "This document contains useful information."
+            (
+                "This document contains useful "
+                "information."
+            )
         )
 
         word_document.save(output)
 
         return output.getvalue()
 
-    def test_process_document_extracts_text(self):
+    def test_process_document_extracts_text_and_creates_chunks(
+        self,
+    ):
         document = Document.objects.create(
             title="Test Document",
             file=ContentFile(
@@ -65,7 +79,10 @@ class DocumentProcessingTests(TestCase):
         )
 
         self.assertIn(
-            "This document contains useful information.",
+            (
+                "This document contains useful "
+                "information."
+            ),
             document.text_content,
         )
 
@@ -74,7 +91,21 @@ class DocumentProcessingTests(TestCase):
             "",
         )
 
-    def test_invalid_docx_marks_document_as_failed(self):
+        self.assertGreater(
+            document.chunks.count(),
+            0,
+        )
+
+        first_chunk = document.chunks.first()
+
+        self.assertIn(
+            "Document title",
+            first_chunk.content,
+        )
+
+    def test_invalid_docx_marks_document_as_failed(
+        self,
+    ):
         document = Document.objects.create(
             title="Invalid Document",
             file=ContentFile(
@@ -83,7 +114,9 @@ class DocumentProcessingTests(TestCase):
             ),
         )
 
-        with self.assertRaises(InvalidDocxError):
+        with self.assertRaises(
+            InvalidDocxError
+        ):
             process_document(document)
 
         document.refresh_from_db()
@@ -101,4 +134,9 @@ class DocumentProcessingTests(TestCase):
         self.assertNotEqual(
             document.processing_error,
             "",
+        )
+
+        self.assertEqual(
+            document.chunks.count(),
+            0,
         )

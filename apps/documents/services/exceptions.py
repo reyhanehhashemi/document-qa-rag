@@ -8,3 +8,7 @@ class InvalidDocxError(DocumentProcessingError):
 
 class EmptyDocxError(DocumentProcessingError):
     """Raised when no usable text can be extracted from a DOCX document."""
+
+
+class DocumentChunkingError(DocumentProcessingError):
+    """Raised when document text cannot be split into usable chunks."""

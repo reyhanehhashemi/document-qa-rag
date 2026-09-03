@@ -82,3 +82,50 @@ class Document(models.Model):
                 self.original_filename = Path(current_file_name).name
 
         super().save(*args, **kwargs)
+
+
+class DocumentChunk(models.Model):
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="chunks",
+    )
+
+    chunk_index = models.PositiveIntegerField()
+
+    content = models.TextField()
+
+    start_index = models.PositiveIntegerField(
+        default=0,
+    )
+
+    character_count = models.PositiveIntegerField()
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = [
+            "document_id",
+            "chunk_index",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "document",
+                    "chunk_index",
+                ],
+                name="unique_document_chunk_index",
+            )
+        ]
+
+        verbose_name = "Document Chunk"
+        verbose_name_plural = "Document Chunks"
+
+    def __str__(self):
+        return (
+            f"{self.document.title} "
+            f"- Chunk {self.chunk_index}"
+        )
