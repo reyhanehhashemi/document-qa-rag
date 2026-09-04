@@ -16,3 +16,7 @@ class LLMServiceError(Exception):
 
 class LLMConfigurationError(LLMServiceError):
     """Raised when the LLM configuration is invalid."""
+
+
+class RAGServiceError(Exception):
+    """Raised when the RAG question answering flow fails."""

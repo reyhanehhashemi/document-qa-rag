@@ -198,9 +198,20 @@ OPENROUTER_BASE_URL = os.getenv(
 
 OPENROUTER_MODEL = os.getenv(
     "OPENROUTER_MODEL",
-    "openrouter/free",
-
+    "thinkingmachines/inkling:free",
 )
+
+OPENROUTER_FALLBACK_MODELS = [
+    model.strip()
+    for model in os.getenv(
+        "OPENROUTER_FALLBACK_MODELS",
+        (
+            "thinkingmachines/inkling-small:free,"
+            "liquid/lfm-2.5-2.6b:free"
+        ),
+    ).split(",")
+    if model.strip()
+]
 
 OPENROUTER_APP_URL = os.getenv(
     "OPENROUTER_APP_URL",

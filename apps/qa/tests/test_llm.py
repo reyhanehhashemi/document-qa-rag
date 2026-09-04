@@ -11,6 +11,7 @@ from apps.qa.services.exceptions import (
     LLMServiceError,
 )
 from apps.qa.services.llm import (
+    build_model_fallbacks,
     generate_llm_response,
     get_chat_model,
 )
@@ -33,8 +34,48 @@ class LLMServiceTests(SimpleTestCase):
             get_chat_model()
 
     @override_settings(
+        OPENROUTER_MODEL="primary/model:free",
+        OPENROUTER_FALLBACK_MODELS=[
+            "fallback/one:free",
+            "fallback/two:free",
+        ],
+    )
+    def test_model_fallbacks_include_primary_first(self):
+        models = build_model_fallbacks()
+
+        self.assertEqual(
+            models,
+            [
+                "primary/model:free",
+                "fallback/one:free",
+                "fallback/two:free",
+            ],
+        )
+
+    @override_settings(
+        OPENROUTER_MODEL="primary/model:free",
+        OPENROUTER_FALLBACK_MODELS=[
+            "primary/model:free",
+            "fallback/model:free",
+        ],
+    )
+    def test_model_fallbacks_remove_duplicates(self):
+        models = build_model_fallbacks()
+
+        self.assertEqual(
+            models,
+            [
+                "primary/model:free",
+                "fallback/model:free",
+            ],
+        )
+
+    @override_settings(
         OPENROUTER_API_KEY="test-key",
-        OPENROUTER_MODEL="test/model:free",
+        OPENROUTER_MODEL="primary/model:free",
+        OPENROUTER_FALLBACK_MODELS=[
+            "fallback/model:free",
+        ],
         OPENROUTER_BASE_URL=(
             "https://openrouter.ai/api/v1"
         ),
@@ -59,7 +100,7 @@ class LLMServiceTests(SimpleTestCase):
         get_chat_model()
 
         mocked_chat_openrouter.assert_called_once_with(
-            model="test/model:free",
+            model="primary/model:free",
             api_key="test-key",
             base_url=(
                 "https://openrouter.ai/api/v1"
@@ -70,6 +111,12 @@ class LLMServiceTests(SimpleTestCase):
             max_retries=1,
             app_url="http://localhost:8000",
             app_title="Document QA RAG",
+            model_kwargs={
+                "models": [
+                    "primary/model:free",
+                    "fallback/model:free",
+                ],
+            },
         )
 
     @override_settings(

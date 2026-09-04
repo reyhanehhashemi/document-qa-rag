@@ -43,6 +43,25 @@ def validate_llm_configuration():
         )
 
 
+def build_model_fallbacks():
+    """
+    Build the ordered OpenRouter model fallback list.
+
+    The configured primary model is always first.
+    """
+    models = [
+        settings.OPENROUTER_MODEL,
+    ]
+
+    for model in settings.OPENROUTER_FALLBACK_MODELS:
+        if model not in models:
+            models.append(
+                model
+            )
+
+    return models
+
+
 @lru_cache(maxsize=1)
 def get_chat_model():
     """
@@ -61,6 +80,9 @@ def get_chat_model():
             max_retries=settings.OPENROUTER_MAX_RETRIES,
             app_url=settings.OPENROUTER_APP_URL or None,
             app_title=settings.OPENROUTER_APP_NAME or None,
+            model_kwargs={
+                "models": build_model_fallbacks(),
+            },
         )
     except Exception as exc:
         raise LLMConfigurationError(
