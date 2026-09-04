@@ -1,8 +1,23 @@
-from django.contrib import admin
+from django.contrib import (
+    admin,
+    messages,
+)
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import (
+    path,
+    reverse,
+)
 
+from .forms import AskQuestionAdminForm
 from .models import (
     QuestionAnswer,
     QuestionAnswerSource,
+)
+from .services.exceptions import RAGServiceError
+from .services.history import (
+    answer_and_save_question,
 )
 
 
@@ -53,11 +68,13 @@ class QuestionAnswerSourceInline(
 @admin.register(QuestionAnswer)
 class QuestionAnswerAdmin(admin.ModelAdmin):
     """
-    Read-only Django Admin view for question/answer history.
-
-    New questions will be added through a dedicated Admin workflow
-    in the next stage.
+    Django Admin interface for asking questions and viewing
+    immutable question/answer history.
     """
+
+    change_list_template = (
+        "admin/qa/questionanswer/change_list.html"
+    )
 
     list_display = (
         "question_preview",
@@ -132,4 +149,138 @@ class QuestionAnswerAdmin(admin.ModelAdmin):
         self,
         request,
     ):
+        """
+        Prevent manual creation of history records.
+
+        Questions are created only through the dedicated
+        Ask Question workflow.
+        """
         return False
+
+    def get_urls(self):
+        """
+        Add a custom Django Admin URL for asking questions.
+        """
+        default_urls = super().get_urls()
+
+        custom_urls = [
+            path(
+                "ask/",
+                self.admin_site.admin_view(
+                    self.ask_question_view
+                ),
+                name="qa_questionanswer_ask",
+            ),
+        ]
+
+        return (
+            custom_urls
+            + default_urls
+        )
+
+    def ask_question_view(
+        self,
+        request,
+    ):
+        """
+        Render and process the Admin Ask Question form.
+        """
+        if not request.user.has_perm(
+            "qa.add_questionanswer"
+        ):
+            raise PermissionDenied
+
+        if request.method == "POST":
+            form = AskQuestionAdminForm(
+                request.POST
+            )
+
+            if form.is_valid():
+                selected_documents = (
+                    form.cleaned_data[
+                        "documents"
+                    ]
+                )
+
+                document_ids = list(
+                    selected_documents.values_list(
+                        "id",
+                        flat=True,
+                    )
+                )
+
+                if not document_ids:
+                    document_ids = None
+
+                try:
+                    history = answer_and_save_question(
+                        question=(
+                            form.cleaned_data[
+                                "question"
+                            ]
+                        ),
+                        top_k=(
+                            form.cleaned_data[
+                                "top_k"
+                            ]
+                        ),
+                        min_similarity=(
+                            form.cleaned_data[
+                                "min_similarity"
+                            ]
+                        ),
+                        document_ids=document_ids,
+                    )
+
+                except RAGServiceError as exc:
+                    self.message_user(
+                        request,
+                        (
+                            "Question answering failed: "
+                            f"{exc}"
+                        ),
+                        level=messages.ERROR,
+                    )
+
+                else:
+                    self.message_user(
+                        request,
+                        (
+                            "Question answered and "
+                            "saved successfully."
+                        ),
+                        level=messages.SUCCESS,
+                    )
+
+                    return redirect(
+                        reverse(
+                            (
+                                "admin:"
+                                "qa_questionanswer_change"
+                            ),
+                            args=[
+                                history.pk,
+                            ],
+                        )
+                    )
+
+        else:
+            form = AskQuestionAdminForm()
+
+        context = {
+            **self.admin_site.each_context(
+                request
+            ),
+            "title": "Ask a document question",
+            "opts": self.model._meta,
+            "form": form,
+        }
+
+        return TemplateResponse(
+            request,
+            (
+                "admin/qa/questionanswer/"
+                "ask_question.html"
+            ),
+            context,
+        )

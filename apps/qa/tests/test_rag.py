@@ -9,6 +9,7 @@ from apps.qa.services.exceptions import (
 )
 from apps.qa.services.rag import (
     NO_CONTEXT_ANSWER,
+    NO_CONTEXT_ANSWER_EN,
     answer_question,
     build_context,
 )
@@ -168,6 +169,35 @@ class RAGServiceTests(SimpleTestCase):
         self.assertEqual(
             result.answer,
             NO_CONTEXT_ANSWER,
+        )
+
+        self.assertEqual(
+            result.sources,
+            (),
+        )
+
+        mocked_generate.assert_not_called()
+
+    @patch(
+        "apps.qa.services.rag.generate_llm_response"
+    )
+    @patch(
+        "apps.qa.services.rag.retrieve_relevant_chunks"
+    )
+    def test_english_no_context_answer_uses_english(
+        self,
+        mocked_retrieve,
+        mocked_generate,
+    ):
+        mocked_retrieve.return_value = []
+
+        result = answer_question(
+            "Who is the university president?"
+        )
+
+        self.assertEqual(
+            result.answer,
+            NO_CONTEXT_ANSWER_EN,
         )
 
         self.assertEqual(

@@ -9,13 +9,17 @@ from .llm import generate_llm_response
 from .retriever import (
     DEFAULT_MIN_SIMILARITY,
     DEFAULT_TOP_K,
-    RetrievedChunk,
     retrieve_relevant_chunks,
 )
 
 
 NO_CONTEXT_ANSWER = (
     "اطلاعات کافی برای پاسخ‌گویی در اسناد موجود نیست."
+)
+
+NO_CONTEXT_ANSWER_EN = (
+    "The available documents do not contain enough information "
+    "to answer this question."
 )
 
 
@@ -61,6 +65,33 @@ class RAGAnswer:
     question: str
     answer: str
     sources: tuple[RAGSource, ...]
+
+
+def contains_persian_or_arabic_text(text):
+    """
+    Return True when the text contains Persian or Arabic characters.
+
+    This lightweight check lets deterministic no-context responses
+    follow the language of the user's question without introducing
+    another external dependency.
+    """
+    return any(
+        "\u0600" <= character <= "\u06ff"
+        for character in text
+    )
+
+
+def get_no_context_answer(question):
+    """
+    Return the deterministic no-context message in the question's
+    language.
+    """
+    if contains_persian_or_arabic_text(
+        question
+    ):
+        return NO_CONTEXT_ANSWER
+
+    return NO_CONTEXT_ANSWER_EN
 
 
 def build_context(
@@ -161,7 +192,7 @@ def answer_question(
 
     If no sufficiently relevant document chunks are found, the LLM is
     not called and a deterministic insufficient-context answer is
-    returned.
+    returned in the language of the question.
     """
     if not isinstance(question, str) or not question.strip():
         raise RAGServiceError(
@@ -185,7 +216,9 @@ def answer_question(
     if not retrieved_chunks:
         return RAGAnswer(
             question=clean_question,
-            answer=NO_CONTEXT_ANSWER,
+            answer=get_no_context_answer(
+                clean_question
+            ),
             sources=(),
         )
 
