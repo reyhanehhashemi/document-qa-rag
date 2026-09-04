@@ -1,1 +1,0 @@
-"""API serializers for the documents application."""

@@ -1,1 +1,0 @@
-"""Views for the question answering application."""
