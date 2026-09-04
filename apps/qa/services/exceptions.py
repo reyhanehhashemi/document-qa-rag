@@ -8,3 +8,11 @@ class DocumentIndexingError(Exception):
 
 class RetrievalError(Exception):
     """Raised when semantic document retrieval fails."""
+
+
+class LLMServiceError(Exception):
+    """Raised when communication with the LLM fails."""
+
+
+class LLMConfigurationError(LLMServiceError):
+    """Raised when the LLM configuration is invalid."""

@@ -20,7 +20,10 @@ SECRET_KEY = os.getenv(
     "django-insecure-development-only-key",
 )
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
+DEBUG = os.getenv(
+    "DJANGO_DEBUG",
+    "True",
+).lower() == "true"
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -83,11 +86,26 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "document_qa"),
-        "USER": os.getenv("DB_USER", "document_qa_user"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "5433"),
+        "NAME": os.getenv(
+            "DB_NAME",
+            "document_qa",
+        ),
+        "USER": os.getenv(
+            "DB_USER",
+            "document_qa_user",
+        ),
+        "PASSWORD": os.getenv(
+            "DB_PASSWORD",
+            "",
+        ),
+        "HOST": os.getenv(
+            "DB_HOST",
+            "127.0.0.1",
+        ),
+        "PORT": os.getenv(
+            "DB_PORT",
+            "5433",
+        ),
     }
 }
 
@@ -163,9 +181,64 @@ EMBEDDING_BATCH_SIZE = int(
     )
 )
 
-# This value is part of the database schema and must match
-# the output dimension of the configured embedding model.
 EMBEDDING_DIMENSION = 384
+
+
+# OpenRouter
+
+OPENROUTER_API_KEY = os.getenv(
+    "OPENROUTER_API_KEY",
+    "",
+)
+
+OPENROUTER_BASE_URL = os.getenv(
+    "OPENROUTER_BASE_URL",
+    "https://openrouter.ai/api/v1",
+)
+
+OPENROUTER_MODEL = os.getenv(
+    "OPENROUTER_MODEL",
+    "openrouter/free",
+
+)
+
+OPENROUTER_APP_URL = os.getenv(
+    "OPENROUTER_APP_URL",
+    "http://localhost:8000",
+)
+
+OPENROUTER_APP_NAME = os.getenv(
+    "OPENROUTER_APP_NAME",
+    "Document QA RAG",
+)
+
+OPENROUTER_TEMPERATURE = float(
+    os.getenv(
+        "OPENROUTER_TEMPERATURE",
+        "0",
+    )
+)
+
+OPENROUTER_MAX_TOKENS = int(
+    os.getenv(
+        "OPENROUTER_MAX_TOKENS",
+        "512",
+    )
+)
+
+OPENROUTER_TIMEOUT_MS = int(
+    os.getenv(
+        "OPENROUTER_TIMEOUT_MS",
+        "120000",
+    )
+)
+
+OPENROUTER_MAX_RETRIES = int(
+    os.getenv(
+        "OPENROUTER_MAX_RETRIES",
+        "1",
+    )
+)
 
 
 # Default primary key field type
