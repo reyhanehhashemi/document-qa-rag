@@ -13,6 +13,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
+# Helpers
+
+def env_bool(
+    name,
+    default=False,
+):
+    return os.getenv(
+        name,
+        str(default),
+    ).lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 # Security
 
 SECRET_KEY = os.getenv(
@@ -20,10 +37,10 @@ SECRET_KEY = os.getenv(
     "django-insecure-development-only-key",
 )
 
-DEBUG = os.getenv(
+DEBUG = env_bool(
     "DJANGO_DEBUG",
-    "True",
-).lower() == "true"
+    True,
+)
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -33,6 +50,35 @@ ALLOWED_HOSTS = [
     ).split(",")
     if host.strip()
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        "",
+    ).split(",")
+    if origin.strip()
+]
+
+SECURE_SSL_REDIRECT = env_bool(
+    "DJANGO_SECURE_SSL_REDIRECT",
+    False,
+)
+
+SESSION_COOKIE_SECURE = env_bool(
+    "DJANGO_SESSION_COOKIE_SECURE",
+    False,
+)
+
+CSRF_COOKIE_SECURE = env_bool(
+    "DJANGO_CSRF_COOKIE_SECURE",
+    False,
+)
+
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
 
 
 # Application definition
@@ -58,6 +104,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -162,10 +209,32 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
+STATIC_ROOT = Path(
+    os.getenv(
+        "STATIC_ROOT",
+        BASE_DIR / "staticfiles",
+    )
+)
+
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage."
+            "CompressedStaticFilesStorage"
+        ),
+    },
+}
+
 
 # Uploaded media files
 
 MEDIA_URL = "/media/"
+
 MEDIA_ROOT = BASE_DIR / "media"
 
 

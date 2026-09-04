@@ -26,16 +26,23 @@ services:
       context: .
       dockerfile: Dockerfile
     command:
-      - python
-      - manage.py
-      - runserver
-      - 0.0.0.0:8000
+      - sh
+      - /app/docker/web/start.sh
     env_file:
       - .env
     environment:
       DB_HOST: db
       DB_PORT: "5432"
       HF_HOME: /root/.cache/huggingface
+
+      STATIC_ROOT: /var/www/static
+
+      GUNICORN_WORKERS: "1"
+      GUNICORN_THREADS: "2"
+      GUNICORN_TIMEOUT: "180"
+      GUNICORN_GRACEFUL_TIMEOUT: "30"
+      GUNICORN_KEEPALIVE: "5"
+      GUNICORN_LOG_LEVEL: info
     ports:
       - "8000:8000"
     volumes:
@@ -44,6 +51,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=5)"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    stop_grace_period: 30s
     restart: unless-stopped
 
 volumes:

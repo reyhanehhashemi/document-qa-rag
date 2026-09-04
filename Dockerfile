@@ -26,4 +26,4 @@ COPY . /app/
 
 ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "/app/docker/web/start.sh"]
