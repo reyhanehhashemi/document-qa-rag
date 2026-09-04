@@ -1,0 +1,40 @@
+{
+  "document": "northbridge_student_guide.docx",
+  "title": "Northbridge University Student Services Guide",
+  "supported_questions": [
+    {
+      "question": "When does course registration open?",
+      "expected_fact": "Fourteen days before the first day of each semester."
+    },
+    {
+      "question": "When does course registration close?",
+      "expected_fact": "At 5:00 PM on the third day of classes."
+    },
+    {
+      "question": "How many books can a student borrow?",
+      "expected_fact": "Up to six books."
+    },
+    {
+      "question": "How much is the late tuition payment fee?",
+      "expected_fact": "25 US dollars."
+    },
+    {
+      "question": "Where can new students collect their ID card?",
+      "expected_fact": "Room 204 in the Student Services Center."
+    },
+    {
+      "question": "Where is the IT Help Desk located?",
+      "expected_fact": "On the first floor of the Technology Building."
+    }
+  ],
+  "unsupported_questions": [
+    {
+      "question": "Who is the university president?",
+      "expected_behavior": "The system should say that the available documents do not contain enough information."
+    },
+    {
+      "question": "How much does a parking permit cost?",
+      "expected_behavior": "The system should not invent a parking permit price."
+    }
+  ]
+}
