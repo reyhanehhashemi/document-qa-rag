@@ -22,6 +22,12 @@ urlpatterns = [
             "apps.documents.api.urls"
         ),
     ),
+    path(
+        "api/v1/",
+        include(
+            "apps.qa.api.urls"
+        ),
+    ),
 ]
 
 if settings.DEBUG:
