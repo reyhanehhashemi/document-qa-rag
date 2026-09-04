@@ -15,6 +15,9 @@ class AskQuestionSerializer(serializers.Serializer):
     question = serializers.CharField(
         allow_blank=False,
         trim_whitespace=True,
+        help_text=(
+            "Question to answer using indexed document content."
+        ),
     )
 
     document_ids = serializers.ListField(
@@ -24,6 +27,11 @@ class AskQuestionSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
         default=None,
+        help_text=(
+            "Optional indexed document IDs. "
+            "Omit, use null, or use an empty list "
+            "to search all indexed documents."
+        ),
     )
 
     top_k = serializers.IntegerField(
@@ -31,6 +39,9 @@ class AskQuestionSerializer(serializers.Serializer):
         max_value=10,
         required=False,
         default=5,
+        help_text=(
+            "Maximum number of retrieved chunks."
+        ),
     )
 
     min_similarity = serializers.FloatField(
@@ -38,6 +49,10 @@ class AskQuestionSerializer(serializers.Serializer):
         max_value=1.0,
         required=False,
         default=0.20,
+        help_text=(
+            "Minimum cosine similarity required "
+            "for a retrieved chunk."
+        ),
     )
 
     def validate_document_ids(
@@ -143,7 +158,7 @@ class QuestionAnswerListSerializer(
     def get_source_count(
         self,
         obj,
-    ):
+    ) -> int:
         annotated_count = getattr(
             obj,
             "api_source_count",
@@ -183,3 +198,15 @@ class QuestionAnswerDetailSerializer(
         )
 
         read_only_fields = fields
+
+
+class ErrorDetailSerializer(
+    serializers.Serializer
+):
+    """
+    Standard service error response.
+    """
+
+    detail = serializers.CharField(
+        read_only=True,
+    )

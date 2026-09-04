@@ -1,4 +1,8 @@
 from django.db.models import Count
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import (
     parsers,
     permissions,
@@ -16,6 +20,52 @@ from .serializers import (
 )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Documents"],
+        summary="List documents",
+        description=(
+            "Return all uploaded documents. "
+            "The list response omits full extracted text."
+        ),
+    ),
+    create=extend_schema(
+        tags=["Documents"],
+        summary="Upload and index a DOCX document",
+        description=(
+            "Upload a DOCX document. The document is automatically "
+            "processed, chunked, embedded, and indexed."
+        ),
+    ),
+    retrieve=extend_schema(
+        tags=["Documents"],
+        summary="Retrieve a document",
+        description=(
+            "Return one document including its full extracted text."
+        ),
+    ),
+    update=extend_schema(
+        tags=["Documents"],
+        summary="Replace a document",
+        description=(
+            "Update a document. Replacing the uploaded file runs "
+            "the complete processing and indexing pipeline again."
+        ),
+    ),
+    partial_update=extend_schema(
+        tags=["Documents"],
+        summary="Partially update a document",
+        description=(
+            "Update selected document fields. A title-only update "
+            "does not rebuild embeddings. Replacing the file does."
+        ),
+    ),
+    destroy=extend_schema(
+        tags=["Documents"],
+        summary="Delete a document",
+        description="Delete the document and its related chunks.",
+    ),
+)
 class DocumentViewSet(
     viewsets.ModelViewSet
 ):

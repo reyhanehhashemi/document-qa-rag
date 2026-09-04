@@ -40,7 +40,7 @@ class DocumentListSerializer(serializers.ModelSerializer):
     def get_chunk_count(
         self,
         obj,
-    ):
+    ) -> int:
         annotated_count = getattr(
             obj,
             "api_chunk_count",

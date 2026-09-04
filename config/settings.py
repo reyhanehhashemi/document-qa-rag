@@ -44,6 +44,8 @@ INSTALLED_APPS = [
 
     # Third-party applications
     "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
 
     # Django applications
     "django.contrib.admin",
@@ -158,7 +160,7 @@ USE_TZ = True
 
 # Static files
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 
 # Uploaded media files
@@ -173,6 +175,30 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
+    "DEFAULT_SCHEMA_CLASS": (
+        "drf_spectacular.openapi.AutoSchema"
+    ),
+}
+
+
+# OpenAPI documentation
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Document QA RAG API",
+    "DESCRIPTION": (
+        "REST API for DOCX document management, semantic retrieval, "
+        "and document-grounded question answering."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayOperationId": True,
+    },
 }
 
 

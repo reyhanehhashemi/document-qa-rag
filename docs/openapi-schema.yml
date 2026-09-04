@@ -1,0 +1,570 @@
+openapi: 3.0.3
+info:
+  title: Document QA RAG API
+  version: 1.0.0
+  description: REST API for DOCX document management, semantic retrieval, and document-grounded
+    question answering.
+paths:
+  /api/v1/documents/:
+    get:
+      operationId: v1_documents_list
+      description: Return all uploaded documents. The list response omits full extracted
+        text.
+      summary: List documents
+      tags:
+      - Documents
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentList'
+          description: ''
+    post:
+      operationId: v1_documents_create
+      description: Upload a DOCX document. The document is automatically processed,
+        chunked, embedded, and indexed.
+      summary: Upload and index a DOCX document
+      tags:
+      - Documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DocumentDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentDetailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+  /api/v1/documents/{id}/:
+    get:
+      operationId: v1_documents_retrieve
+      description: Return one document including its full extracted text.
+      summary: Retrieve a document
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Document.
+        required: true
+      tags:
+      - Documents
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+    put:
+      operationId: v1_documents_update
+      description: Update a document. Replacing the uploaded file runs the complete
+        processing and indexing pipeline again.
+      summary: Replace a document
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Document.
+        required: true
+      tags:
+      - Documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DocumentDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentDetailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+    patch:
+      operationId: v1_documents_partial_update
+      description: Update selected document fields. A title-only update does not rebuild
+        embeddings. Replacing the file does.
+      summary: Partially update a document
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Document.
+        required: true
+      tags:
+      - Documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentDetailRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+    delete:
+      operationId: v1_documents_destroy
+      description: Delete the document and its related chunks.
+      summary: Delete a document
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Document.
+        required: true
+      tags:
+      - Documents
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/questions/:
+    get:
+      operationId: v1_questions_list
+      description: Return saved question-answer history in reverse chronological order.
+      summary: List question-answer history
+      tags:
+      - Question History
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionAnswerList'
+          description: ''
+  /api/v1/questions/{id}/:
+    get:
+      operationId: v1_questions_retrieve
+      description: Return one persisted question-answer item including its source
+        snapshots.
+      summary: Retrieve a saved answer
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Question History
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionAnswerDetail'
+          description: ''
+  /api/v1/questions/ask/:
+    post:
+      operationId: v1_questions_ask_create
+      description: Retrieve relevant chunks from indexed documents, generate a grounded
+        answer, persist the result, and return the answer with its source snapshots.
+      summary: Ask a document-grounded question
+      tags:
+      - Question Answering
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskQuestionRequest'
+            examples:
+              QuestionUsingSelectedDocuments:
+                value:
+                  question: When does course registration open?
+                  document_ids:
+                  - 1
+                  top_k: 3
+                  min_similarity: 0.2
+                summary: Question using selected documents
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AskQuestionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AskQuestionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionAnswerDetail'
+          description: ''
+        '400':
+          description: Request validation error.
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Retrieval or LLM service failure.
+components:
+  schemas:
+    AskQuestionRequest:
+      type: object
+      description: Validate input for the document question answering API.
+      properties:
+        question:
+          type: string
+          minLength: 1
+          description: Question to answer using indexed document content.
+        document_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          nullable: true
+          description: Optional indexed document IDs. Omit, use null, or use an empty
+            list to search all indexed documents.
+        top_k:
+          type: integer
+          maximum: 10
+          minimum: 1
+          default: 5
+          description: Maximum number of retrieved chunks.
+        min_similarity:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+          default: 0.2
+          description: Minimum cosine similarity required for a retrieved chunk.
+      required:
+      - question
+    DocumentDetail:
+      type: object
+      description: Full serializer used for create, retrieve, and update.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        file:
+          type: string
+          format: uri
+          pattern: (?:docx)$
+        original_filename:
+          type: string
+          readOnly: true
+        text_content:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        processing_error:
+          type: string
+          readOnly: true
+        chunk_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chunk_count
+      - created_at
+      - file
+      - id
+      - original_filename
+      - processing_error
+      - status
+      - text_content
+      - title
+      - updated_at
+    DocumentDetailRequest:
+      type: object
+      description: Full serializer used for create, retrieve, and update.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        file:
+          type: string
+          format: binary
+          pattern: (?:docx)$
+      required:
+      - file
+      - title
+    DocumentList:
+      type: object
+      description: Compact serializer used for document lists.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        file:
+          type: string
+          format: uri
+          pattern: (?:docx)$
+        original_filename:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        processing_error:
+          type: string
+          readOnly: true
+        chunk_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chunk_count
+      - created_at
+      - file
+      - id
+      - original_filename
+      - processing_error
+      - status
+      - title
+      - updated_at
+    ErrorDetail:
+      type: object
+      description: Standard service error response.
+      properties:
+        detail:
+          type: string
+          readOnly: true
+      required:
+      - detail
+    PatchedDocumentDetailRequest:
+      type: object
+      description: Full serializer used for create, retrieve, and update.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        file:
+          type: string
+          format: binary
+          pattern: (?:docx)$
+    QuestionAnswerDetail:
+      type: object
+      description: Complete history serializer including source snapshots.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        question:
+          type: string
+          readOnly: true
+        answer:
+          type: string
+          readOnly: true
+        top_k:
+          type: integer
+          readOnly: true
+        min_similarity:
+          type: number
+          format: double
+          readOnly: true
+        document_ids:
+          readOnly: true
+          nullable: true
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionAnswerSource'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - answer
+      - created_at
+      - document_ids
+      - id
+      - min_similarity
+      - question
+      - sources
+      - top_k
+    QuestionAnswerList:
+      type: object
+      description: Compact serializer for question-answer history lists.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        question:
+          type: string
+          readOnly: true
+        answer:
+          type: string
+          readOnly: true
+        top_k:
+          type: integer
+          readOnly: true
+        min_similarity:
+          type: number
+          format: double
+          readOnly: true
+        document_ids:
+          readOnly: true
+          nullable: true
+        source_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - answer
+      - created_at
+      - document_ids
+      - id
+      - min_similarity
+      - question
+      - source_count
+      - top_k
+    QuestionAnswerSource:
+      type: object
+      description: Source snapshot returned with a question answer.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        chunk_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        document_id_snapshot:
+          type: integer
+          readOnly: true
+        document_title:
+          type: string
+          readOnly: true
+        chunk_index:
+          type: integer
+          readOnly: true
+        similarity:
+          type: number
+          format: double
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chunk_id
+      - chunk_index
+      - created_at
+      - document_id_snapshot
+      - document_title
+      - id
+      - similarity
+    StatusEnum:
+      enum:
+      - uploaded
+      - processing
+      - processed
+      - indexed
+      - failed
+      type: string
+      description: |-
+        * `uploaded` - Uploaded
+        * `processing` - Processing
+        * `processed` - Processed
+        * `indexed` - Indexed
+        * `failed` - Failed
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

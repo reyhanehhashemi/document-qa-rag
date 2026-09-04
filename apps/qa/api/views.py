@@ -1,4 +1,10 @@
 from django.db.models import Count
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import (
     generics,
     permissions,
@@ -15,6 +21,7 @@ from apps.qa.services.history import (
 
 from .serializers import (
     AskQuestionSerializer,
+    ErrorDetailSerializer,
     QuestionAnswerDetailSerializer,
     QuestionAnswerListSerializer,
 )
@@ -29,6 +36,44 @@ class AskQuestionAPIView(APIView):
         permissions.AllowAny,
     ]
 
+    @extend_schema(
+        tags=["Question Answering"],
+        summary="Ask a document-grounded question",
+        description=(
+            "Retrieve relevant chunks from indexed documents, "
+            "generate a grounded answer, persist the result, "
+            "and return the answer with its source snapshots."
+        ),
+        request=AskQuestionSerializer,
+        responses={
+            201: QuestionAnswerDetailSerializer,
+            400: OpenApiResponse(
+                description="Request validation error."
+            ),
+            503: OpenApiResponse(
+                response=ErrorDetailSerializer,
+                description=(
+                    "Retrieval or LLM service failure."
+                ),
+            ),
+        },
+        examples=[
+            OpenApiExample(
+                "Question using selected documents",
+                request_only=True,
+                value={
+                    "question": (
+                        "When does course registration open?"
+                    ),
+                    "document_ids": [
+                        1,
+                    ],
+                    "top_k": 3,
+                    "min_similarity": 0.2,
+                },
+            ),
+        ],
+    )
     def post(
         self,
         request,
@@ -98,6 +143,16 @@ class AskQuestionAPIView(APIView):
         )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Question History"],
+        summary="List question-answer history",
+        description=(
+            "Return saved question-answer history "
+            "in reverse chronological order."
+        ),
+    ),
+)
 class QuestionAnswerListAPIView(
     generics.ListAPIView
 ):
@@ -127,6 +182,16 @@ class QuestionAnswerListAPIView(
         )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Question History"],
+        summary="Retrieve a saved answer",
+        description=(
+            "Return one persisted question-answer item "
+            "including its source snapshots."
+        ),
+    ),
+)
 class QuestionAnswerDetailAPIView(
     generics.RetrieveAPIView
 ):
