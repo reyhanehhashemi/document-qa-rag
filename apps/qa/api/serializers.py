@@ -198,15 +198,3 @@ class QuestionAnswerDetailSerializer(
         )
 
         read_only_fields = fields
-
-
-class ErrorDetailSerializer(
-    serializers.Serializer
-):
-    """
-    Standard service error response.
-    """
-
-    detail = serializers.CharField(
-        read_only=True,
-    )

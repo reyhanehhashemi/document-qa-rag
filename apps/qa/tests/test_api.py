@@ -198,9 +198,18 @@ class QuestionAnswerAPITests(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
+        self.assertEqual(
+            response.data["error"]["code"],
+            "validation_error",
+        )
+
         self.assertIn(
             "document_ids",
-            response.data,
+            response.data[
+                "error"
+            ][
+                "details"
+            ],
         )
 
         mocked_answer.assert_not_called()
@@ -236,9 +245,18 @@ class QuestionAnswerAPITests(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
+        self.assertEqual(
+            response.data["error"]["code"],
+            "validation_error",
+        )
+
         self.assertIn(
             "document_ids",
-            response.data,
+            response.data[
+                "error"
+            ][
+                "details"
+            ],
         )
 
         mocked_answer.assert_not_called()
@@ -269,9 +287,17 @@ class QuestionAnswerAPITests(APITestCase):
             status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
-        self.assertIn(
-            "detail",
-            response.data,
+        self.assertEqual(
+            response.data["error"]["code"],
+            "service_unavailable",
+        )
+
+        self.assertEqual(
+            response.data["error"]["message"],
+            (
+                "Unable to generate the "
+                "document-based answer."
+            ),
         )
 
     def test_history_list_returns_saved_answers(
@@ -291,17 +317,28 @@ class QuestionAnswerAPITests(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            response.data["count"],
             1,
         )
 
         self.assertEqual(
-            response.data[0]["id"],
+            len(
+                response.data["results"]
+            ),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[
+                "results"
+            ][0]["id"],
             history.id,
         )
 
         self.assertEqual(
-            response.data[0]["source_count"],
+            response.data[
+                "results"
+            ][0]["source_count"],
             0,
         )
 
@@ -310,19 +347,18 @@ class QuestionAnswerAPITests(APITestCase):
     ):
         document = self.create_document()
 
+        content = (
+            "Registration opens fourteen "
+            "days before the semester."
+        )
+
         chunk = DocumentChunk.objects.create(
             document=document,
             chunk_index=0,
-            content=(
-                "Registration opens fourteen "
-                "days before the semester."
-            ),
+            content=content,
             start_index=0,
-            character_count=(
-                len(
-                    "Registration opens fourteen "
-                    "days before the semester."
-                )
+            character_count=len(
+                content
             ),
         )
 
@@ -356,7 +392,9 @@ class QuestionAnswerAPITests(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data["sources"]),
+            len(
+                response.data["sources"]
+            ),
             1,
         )
 
@@ -399,6 +437,119 @@ class QuestionAnswerAPITests(APITestCase):
         )
 
         self.assertEqual(
+            response.data["error"]["code"],
+            "method_not_allowed",
+        )
+
+        self.assertEqual(
             QuestionAnswer.objects.count(),
             0,
+        )
+
+    @patch(
+        "apps.qa.api.views.answer_and_save_question"
+    )
+    def test_blank_question_returns_standardized_validation_error(
+        self,
+        mocked_answer,
+    ):
+        response = self.client.post(
+            reverse(
+                "question-ask"
+            ),
+            data={
+                "question": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(
+            response.data["error"]["code"],
+            "validation_error",
+        )
+
+        self.assertIn(
+            "question",
+            response.data[
+                "error"
+            ][
+                "details"
+            ],
+        )
+
+        mocked_answer.assert_not_called()
+
+    def test_history_list_is_paginated(
+        self,
+    ):
+        for index in range(
+            21
+        ):
+            self.create_history(
+                question=(
+                    f"Question {index}"
+                )
+            )
+
+        response = self.client.get(
+            reverse(
+                "question-list"
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            21,
+        )
+
+        self.assertEqual(
+            len(
+                response.data["results"]
+            ),
+            20,
+        )
+
+        self.assertIsNotNone(
+            response.data["next"]
+        )
+
+        self.assertIsNone(
+            response.data["previous"]
+        )
+
+    def test_missing_history_returns_standardized_404(
+        self,
+    ):
+        response = self.client.get(
+            reverse(
+                "question-detail",
+                args=[
+                    999999,
+                ],
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertEqual(
+            response.data["error"]["code"],
+            "not_found",
+        )
+
+        self.assertIn(
+            "message",
+            response.data["error"],
         )

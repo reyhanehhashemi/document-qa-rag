@@ -37,6 +37,7 @@ class APIDocumentationTests(APITestCase):
         )
 
         expected_paths = (
+            "/api/health/",
             "/api/v1/documents/",
             "/api/v1/questions/",
             "/api/v1/questions/ask/",
@@ -47,6 +48,16 @@ class APIDocumentationTests(APITestCase):
                 path,
                 schema["paths"],
             )
+
+        components = schema.get(
+            "components",
+            {},
+        )
+
+        self.assertNotIn(
+            "securitySchemes",
+            components,
+        )
 
     def test_swagger_ui_is_available(
         self,

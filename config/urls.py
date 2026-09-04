@@ -15,11 +15,22 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from config.api_views import (
+    HealthCheckAPIView,
+)
+
 
 urlpatterns = [
     path(
         "admin/",
         admin.site.urls,
+    ),
+
+    # System
+    path(
+        "api/health/",
+        HealthCheckAPIView.as_view(),
+        name="api-health",
     ),
 
     # API documentation

@@ -5,6 +5,29 @@ info:
   description: REST API for DOCX document management, semantic retrieval, and document-grounded
     question answering.
 paths:
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: Check whether the API is running and the PostgreSQL database is
+        reachable.
+      summary: Check API health
+      tags:
+      - System
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: ''
   /api/v1/documents/:
     get:
       operationId: v1_documents_list
@@ -14,8 +37,6 @@ paths:
       tags:
       - Documents
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
@@ -46,8 +67,6 @@ paths:
               $ref: '#/components/schemas/DocumentDetailRequest'
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '201':
@@ -55,6 +74,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
           description: ''
   /api/v1/documents/{id}/:
     get:
@@ -71,8 +96,6 @@ paths:
       tags:
       - Documents
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
@@ -80,6 +103,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
           description: ''
     put:
       operationId: v1_documents_update
@@ -108,8 +137,6 @@ paths:
               $ref: '#/components/schemas/DocumentDetailRequest'
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
@@ -117,6 +144,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
           description: ''
     patch:
       operationId: v1_documents_partial_update
@@ -144,8 +183,6 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedDocumentDetailRequest'
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
@@ -153,6 +190,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
           description: ''
     delete:
       operationId: v1_documents_destroy
@@ -168,31 +217,45 @@ paths:
       tags:
       - Documents
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '204':
-          description: No response body
+          description: No response body.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: ''
   /api/v1/questions/:
     get:
       operationId: v1_questions_list
-      description: Return saved question-answer history in reverse chronological order.
+      description: Return paginated saved question-answer history in reverse chronological
+        order.
       summary: List question-answer history
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - Question History
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/QuestionAnswerList'
+                $ref: '#/components/schemas/PaginatedQuestionAnswerListList'
           description: ''
   /api/v1/questions/{id}/:
     get:
@@ -209,8 +272,6 @@ paths:
       tags:
       - Question History
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
@@ -218,6 +279,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QuestionAnswerDetail'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
           description: ''
   /api/v1/questions/ask/:
     post:
@@ -249,8 +316,6 @@ paths:
               $ref: '#/components/schemas/AskQuestionRequest'
         required: true
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '201':
@@ -260,15 +325,39 @@ paths:
                 $ref: '#/components/schemas/QuestionAnswerDetail'
           description: ''
         '400':
-          description: Request validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+          description: ''
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorDetail'
-          description: Retrieval or LLM service failure.
+                $ref: '#/components/schemas/APIError'
+          description: ''
 components:
   schemas:
+    APIError:
+      type: object
+      description: Standard API error response envelope.
+      properties:
+        error:
+          $ref: '#/components/schemas/APIErrorBody'
+      required:
+      - error
+    APIErrorBody:
+      type: object
+      description: Standard error body returned by the REST API.
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details: {}
+      required:
+      - code
+      - message
     AskQuestionRequest:
       type: object
       description: Validate input for the document question answering API.
@@ -409,15 +498,43 @@ components:
       - status
       - title
       - updated_at
-    ErrorDetail:
+    HealthCheck:
       type: object
-      description: Standard service error response.
+      description: Health check response.
       properties:
-        detail:
+        status:
           type: string
-          readOnly: true
+        database:
+          type: string
+        version:
+          type: string
       required:
-      - detail
+      - database
+      - status
+      - version
+    PaginatedQuestionAnswerListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionAnswerList'
     PatchedDocumentDetailRequest:
       type: object
       description: Full serializer used for create, retrieve, and update.
@@ -560,11 +677,3 @@ components:
         * `processed` - Processed
         * `indexed` - Indexed
         * `failed` - Failed
-  securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid

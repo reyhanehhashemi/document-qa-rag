@@ -1,13 +1,13 @@
 import tempfile
+from unittest.mock import patch
 
-from django.test import override_settings
-from django.urls import reverse
 from django.core.files.uploadedfile import (
     SimpleUploadedFile,
 )
+from django.test import override_settings
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from unittest.mock import patch
 
 from apps.documents.models import Document
 
@@ -263,12 +263,48 @@ class DocumentAPITests(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
+        self.assertEqual(
+            response.data["error"]["code"],
+            "validation_error",
+        )
+
         self.assertIn(
             "file",
-            response.data,
+            response.data[
+                "error"
+            ][
+                "details"
+            ],
         )
 
         self.assertEqual(
             Document.objects.count(),
             0,
+        )
+
+    def test_missing_document_returns_standardized_404(
+        self,
+    ):
+        response = self.client.get(
+            reverse(
+                "document-detail",
+                args=[
+                    999999,
+                ],
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertEqual(
+            response.data["error"]["code"],
+            "not_found",
+        )
+
+        self.assertIn(
+            "message",
+            response.data["error"],
         )

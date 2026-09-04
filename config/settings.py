@@ -175,8 +175,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_SCHEMA_CLASS": (
         "drf_spectacular.openapi.AutoSchema"
+    ),
+    "EXCEPTION_HANDLER": (
+        "config.api_exceptions.api_exception_handler"
     ),
 }
 

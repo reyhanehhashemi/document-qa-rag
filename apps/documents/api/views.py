@@ -1,5 +1,6 @@
 from django.db.models import Count
 from drf_spectacular.utils import (
+    OpenApiResponse,
     extend_schema,
     extend_schema_view,
 )
@@ -12,6 +13,9 @@ from rest_framework import (
 from apps.documents.models import Document
 from apps.documents.services.pipeline import (
     run_document_pipeline,
+)
+from config.api_serializers import (
+    APIErrorSerializer,
 )
 
 from .serializers import (
@@ -36,6 +40,10 @@ from .serializers import (
             "Upload a DOCX document. The document is automatically "
             "processed, chunked, embedded, and indexed."
         ),
+        responses={
+            201: DocumentDetailSerializer,
+            400: APIErrorSerializer,
+        },
     ),
     retrieve=extend_schema(
         tags=["Documents"],
@@ -43,6 +51,10 @@ from .serializers import (
         description=(
             "Return one document including its full extracted text."
         ),
+        responses={
+            200: DocumentDetailSerializer,
+            404: APIErrorSerializer,
+        },
     ),
     update=extend_schema(
         tags=["Documents"],
@@ -51,6 +63,11 @@ from .serializers import (
             "Update a document. Replacing the uploaded file runs "
             "the complete processing and indexing pipeline again."
         ),
+        responses={
+            200: DocumentDetailSerializer,
+            400: APIErrorSerializer,
+            404: APIErrorSerializer,
+        },
     ),
     partial_update=extend_schema(
         tags=["Documents"],
@@ -59,11 +76,24 @@ from .serializers import (
             "Update selected document fields. A title-only update "
             "does not rebuild embeddings. Replacing the file does."
         ),
+        responses={
+            200: DocumentDetailSerializer,
+            400: APIErrorSerializer,
+            404: APIErrorSerializer,
+        },
     ),
     destroy=extend_schema(
         tags=["Documents"],
         summary="Delete a document",
-        description="Delete the document and its related chunks.",
+        description=(
+            "Delete the document and its related chunks."
+        ),
+        responses={
+            204: OpenApiResponse(
+                description="No response body."
+            ),
+            404: APIErrorSerializer,
+        },
     ),
 )
 class DocumentViewSet(

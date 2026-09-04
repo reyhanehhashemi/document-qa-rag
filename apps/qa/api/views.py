@@ -1,7 +1,6 @@
 from django.db.models import Count
 from drf_spectacular.utils import (
     OpenApiExample,
-    OpenApiResponse,
     extend_schema,
     extend_schema_view,
 )
@@ -14,14 +13,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.qa.models import QuestionAnswer
-from apps.qa.services.exceptions import RAGServiceError
+from apps.qa.services.exceptions import (
+    RAGServiceError,
+)
 from apps.qa.services.history import (
     answer_and_save_question,
 )
+from config.api_exceptions import (
+    ServiceUnavailable,
+)
+from config.api_serializers import (
+    APIErrorSerializer,
+)
 
+from .pagination import (
+    QuestionHistoryPagination,
+)
 from .serializers import (
     AskQuestionSerializer,
-    ErrorDetailSerializer,
     QuestionAnswerDetailSerializer,
     QuestionAnswerListSerializer,
 )
@@ -47,15 +56,8 @@ class AskQuestionAPIView(APIView):
         request=AskQuestionSerializer,
         responses={
             201: QuestionAnswerDetailSerializer,
-            400: OpenApiResponse(
-                description="Request validation error."
-            ),
-            503: OpenApiResponse(
-                response=ErrorDetailSerializer,
-                description=(
-                    "Retrieval or LLM service failure."
-                ),
-            ),
+            400: APIErrorSerializer,
+            503: APIErrorSerializer,
         },
         examples=[
             OpenApiExample(
@@ -107,16 +109,11 @@ class AskQuestionAPIView(APIView):
             )
 
         except RAGServiceError as exc:
-            return Response(
-                {
-                    "detail": str(
-                        exc
-                    ),
-                },
-                status=(
-                    status.HTTP_503_SERVICE_UNAVAILABLE
-                ),
-            )
+            raise ServiceUnavailable(
+                detail=str(
+                    exc
+                )
+            ) from exc
 
         history = (
             QuestionAnswer.objects
@@ -148,7 +145,7 @@ class AskQuestionAPIView(APIView):
         tags=["Question History"],
         summary="List question-answer history",
         description=(
-            "Return saved question-answer history "
+            "Return paginated saved question-answer history "
             "in reverse chronological order."
         ),
     ),
@@ -157,11 +154,15 @@ class QuestionAnswerListAPIView(
     generics.ListAPIView
 ):
     """
-    Read-only question-answer history list.
+    Read-only paginated question-answer history list.
     """
 
     serializer_class = (
         QuestionAnswerListSerializer
+    )
+
+    pagination_class = (
+        QuestionHistoryPagination
     )
 
     permission_classes = [
@@ -190,6 +191,10 @@ class QuestionAnswerListAPIView(
             "Return one persisted question-answer item "
             "including its source snapshots."
         ),
+        responses={
+            200: QuestionAnswerDetailSerializer,
+            404: APIErrorSerializer,
+        },
     ),
 )
 class QuestionAnswerDetailAPIView(
