@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     "apps.documents.apps.DocumentsConfig",
     "apps.qa.apps.QAConfig",
 
+    # Third-party applications
+    "rest_framework",
+
     # Django applications
     "django.contrib.admin",
     "django.contrib.auth",
@@ -65,7 +68,9 @@ ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "BACKEND": (
+            "django.template.backends.django.DjangoTemplates"
+        ),
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -160,6 +165,15 @@ STATIC_URL = "static/"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+# Django REST Framework
+
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+}
 
 
 # Embeddings
